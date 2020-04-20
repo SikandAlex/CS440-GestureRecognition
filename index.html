@@ -1,0 +1,118 @@
+<h1 class="p1"><span class="s1">CS 440 Computer Vision Project </span></h1>
+<h3 class="p1"><span class="s1">Alexander Sikand &amp; Thien Nguyen </span></h3>
+<p class="p1"><span class="s2"><a href="mailto:asikand@bu.edu">asikand@bu.edu</a></span></p>
+<p class="p1"><span class="s2"><a href="mailto:thithien@bu.edu">thithien@bu.edu</a></span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1"><strong>Problem</strong></span></p>
+<p class="p1"><span class="s1">In this assignment we were asked to design and implement computer vision algorithms that are capable of recognizing at least three hand shapes and one dynamic gesture in a live video stream. In addition, we must provide a graphical display that responds to the recognition of the hand gestures.</span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1"><strong>System Design</strong></span></p>
+<p class="p1"><span class="s1">The system we designed is capable of recognizing three static gestures:</span></p>
+<ol class="ol1">
+<ol class="ol1">
+<li class="li1"><span class="s1">&ldquo;Open Palm&rdquo;</span></li>
+<li class="li1"><span class="s1">&ldquo;Spider&rdquo;</span></li>
+<li class="li1"><span class="s1">&ldquo;Thumb Up&rdquo;</span></li>
+</ol>
+</ol>
+<p><span class="s1"><img style="margin-right: 0px; margin-left: 0px;" src="https://drive.google.com/uc?export=download&amp;id=1PCkCJ4LR_E8rjjVo0yb05TMbnwAJDUkD" width="205" height="252" /><img style="margin-right: 10px; margin-left: 10px;" src="https://drive.google.com/uc?export=download&amp;id=19cbjR9PXt9zRgs0zPl9VB5ovl6KFQHJt" width="219" height="252" /><img src="https://drive.google.com/uc?export=download&amp;id=1f15GPkigMx9K_gAXm8Xob84ZnLR16-sk" alt="" width="191" height="252" /></span></p>
+<p class="p1"><span class="s1">In addition we recognize a simple dynamic gesture which just uses the &ldquo;Open Palm&rdquo; template but tracks its position to identify motion:</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">&nbsp; &nbsp; &nbsp; </span>1) &ldquo;Waving&rdquo;</span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1"><strong>Pre-Processing</strong></span></p>
+<p class="p1"><span class="s1">We looked at two different means of pre-processing the initial video stream, both of which has its own set of benefits and limitations. </span></p>
+<ol class="ol1">
+<li class="li1"><span class="s1">Background Differencing </span></li>
+<li class="li1"><span class="s1">Skin Color Segmentation (We chose this for our system)</span></li>
+</ol>
+<p class="p1"><span class="s1">For Background Differencing, we take a running average of the background image (no hand is present) over the first 30 frames of the video stream to calibrate the model. We then take the absolute difference between this calibrated &ldquo;background&rdquo; and the current frame (containing the hand). We then threshold this in order to get the foreground and hand shape. The problem with this method of pre-processing is that the background must be completely static. In addition, sometimes when we add the hand into the frame after calibrating the background, the shadows that the hand creates introduces bothersome noise into the differenced video stream. The benefit of background differencing is that it adapts better to different environments, unlike skin color detection, where the upper and lower bounds for the skin color detection must be changed every time we run the algorithm in a new location or lighting situation.</span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1"><img src="https://drive.google.com/uc?export=download&amp;id=1LUfQyV7QCPwmtTZAEWvFEU58zCqcLpsE" alt="" width="456" height="272" /></span></p>
+<p class="p1"><span class="s1"><strong>Example of Good Background Differencing </strong></span></p>
+<p class="p1"><span class="s1"><img src="https://drive.google.com/uc?export=download&amp;id=18nkIKEjaQIL4--0141EPvyZllr4kPidv" alt="" width="456" height="272" /></span></p>
+<p class="p1"><span class="s1"><strong>Example of Poor Background Differencing</strong></span></p>
+<p class="p1"><span class="s1"><strong>(Heavy Noise and Shadow depending on environment)</strong></span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1">For Skin Color Detection, we first determine an upper and lower bound of BGR values (OpenCV uses BGR and not RGB). This often requires trial and error and must be adjusted every time we run our system in a new lighting situation or location on campus. However, once calibrated correctly, it does a good job of segmenting the hand. It is also important that the system runs in a room without &ldquo;cream&rdquo; or &ldquo;beige&rdquo; colored walls because they frequently overlap with the BGR values of the skin color. We use OpenCV&rsquo;s inRange function to create a binary mask, all pixels within the BGR range will be converted to pure white, and all pixels outside the range will be converted to pure black. </span></p>
+<p class="p1"><span class="s1">In order to get a sense of the optimal BGR range for the skin color detection, we first crop the image.</span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1"><img src="https://drive.google.com/uc?export=download&amp;id=1kJCbe7fCYeVzW07THaQkgAXe6TnCjFmi" alt="" width="246" height="261" /></span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1">Then we used an online k-means color clustering tool developed by Martin Krzywinski who is a bioinformatics staff scientist at the British Columbia Cancer Agency.</span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1"><img src="https://drive.google.com/uc?export=download&amp;id=1Jg_j5o65pagL0432EKDct2AzrwKURj8-" alt="" width="824" height="699" /></span></p>
+<p class="p1"><span class="s1">This allows us to quickly determine a general BGR range for each new location or lighting situation we run our system in. </span></p>
+<p class="p1"><span class="s1"><img src="https://drive.google.com/uc?export=download&amp;id=1BuvFtSY0SWtL3lZyKbkN0zVAoSeYy6j5" width="400" height="301" /></span></p>
+<p class="p1">We decided on skin color detection because it was a cleaner mask and image for our system.</p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1"><strong>Static Gesture Recognition </strong></span></p>
+<p class="p1"><span class="s1">Once we have pre-processed the image using one of the above methods, we need to take the masked image and actually perform the gesture recognition using <em>template matching</em>. To obtain the templates we take a picture of the masked hand gesture and crop it. Please see the first section of <strong>System Design</strong> to view the templates.</span></p>
+<p class="p1"><span class="s1">We use the OpenCV method <em>matchTemplate</em> which slides the template along the source image and attempts to find a match. </span></p>
+<p class="p1"><span class="s1">We used the CV_TM_CCOEFF_NORMED method for the template matching.&nbsp;</span></p>
+<p class="p1"><span class="s1"><img src="https://drive.google.com/uc?export=download&amp;id=1D3oaW5wLZKCKlQnD9gRUnkTW2nMwtC6Z" alt="" width="430" height="62" /></span></p>
+<p class="p1"><span class="s1">Because we want the gesture to be recognized at different distances from the computer&rsquo;s webcam, we resize the template to several different sizes and try to match any of them. This increases our chance of detection but also makes the algorithm more inefficient. </span></p>
+<p class="p1"><span class="s1">We apply a threshold to the template matching. If it is too high then the gesture is rarely recognized. If it is too low the false positive rate will increase significantly and two gestures might even be detected at once. We had to play with these values in order to achieve high accuracy. </span></p>
+<p class="p3">&nbsp;</p>
+<p class="p1"><span class="s1"><strong>Dynamic Gesture Recognition</strong></span></p>
+<p class="p1"><span class="s1">For recognizing the &ldquo;Waving&rdquo; dynamic gesture we focus on the &ldquo;Open Palm&rdquo; static gesture we defined previously. Once we have identified the bounding box for the &ldquo;Open Palm&rdquo; matched template we take the center coordinates for the box and append them to an array, thus tracking the movement history. We then compute the x and y range for the palm history. </span></p>
+<p class="p1"><span class="s1">x_range = max(palm_history_x) - min(palm_history_x)</span></p>
+<p class="p1"><span class="s1">y_range = max(palm_history_y) - min(palm_history_y)</span></p>
+<p class="p1"><span class="s1">If movement in the x direction is more significant than the movement in the y direction (we used a factor of 3), we label the gesture as &ldquo;Waving&rdquo;. </span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><span class="s1"><strong>Post-Processing</strong></span></p>
+<p class="p1"><span class="s1">The post-processing step and our graphical display is very simple: we simply place a rectangle bounding box around the matched template as well as some text just above it indicating which type of gesture is recognized. For aesthetics, we prefer overlay the bounding box over the original color video stream rather than the masked black and white image. </span></p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><strong>Qualitative Results</strong></p>
+<p class="p1">Palm Detection Success</p>
+<p class="p1"><img src="https://drive.google.com/uc?export=download&amp;id=1_CU7HktapSiqAI48UiXLl9ej2F7WfW36" width="300" height="225" /><img src="https://drive.google.com/uc?export=download&amp;id=1C703U6dfSux4dBW0Z8OOLCwVrEII2Nwa" width="300" height="225" /></p>
+<p class="p1">Palm Detection Failure</p>
+<p class="p1"><img src="https://drive.google.com/uc?export=download&amp;id=1gnro04McboImxz28so5nR-BQNrYsYDXp" width="300" height="225" /><img src="https://drive.google.com/uc?export=download&amp;id=1JD_zHxwZmnhIjdCY-XgPEePiQ6dk-Jju" width="300" height="225" /></p>
+<p class="p1">Explanation: In this case the palm was not detected because it does not match the template close enough, the fingers are spread way too far apart. We could try decreasing the detection threshold for the palm template, but this would lead to greater false positives.&nbsp;</p>
+<p class="p1">Thumbs Up Detection Success</p>
+<p class="p1"><img src="https://drive.google.com/uc?export=download&amp;id=143y6mjkUy63PQgko3ZBrFiOBcqEMNTfo" width="300" height="225" /><img src="https://drive.google.com/uc?export=download&amp;id=1-bV9R9Hn3dWZY297jdc03e7g3-gdNqWk" width="300" height="225" /></p>
+<p class="p1">Thumbs Up Detection Failure</p>
+<p class="p1"><img src="https://drive.google.com/uc?export=download&amp;id=14F_CD4TCURjGA0lx4U-szRd49-DCLRVb" width="300" height="225" /><img src="https://drive.google.com/uc?export=download&amp;id=1xws_OKlxhjAaUWu43vT93NJrbzUjqnm6" width="300" height="225" /></p>
+<p class="p1">Explanation: In this case a gesture that is technically not "Thumbs Up" is detected on the video stream. <strong>Interesting Observation:&nbsp;</strong>This is because the template actually matches the image within the bounding box so the algorithm performs well on the template matching but is not able to distinguish between these two poses without additional filtering or complexity to the algorithm.&nbsp;</p>
+<p class="p1"><span class="s1"><img style="margin-right: 10px; margin-left: 10px;" src="https://drive.google.com/uc?export=download&amp;id=1f15GPkigMx9K_gAXm8Xob84ZnLR16-sk" width="100" height="132" /><img src="https://drive.google.com/uc?export=download&amp;id=1A5G5JKKZFjGXE-Au-RIdldw6CUwiMMbL" width="145" height="132" /></span></p>
+<p class="p1">Spider Detection Success</p>
+<p class="p1"><img src="https://drive.google.com/uc?export=download&amp;id=1TYJ8mk8M1fPV757k_SoIw-PvBW1WfV6I" width="300" height="225" /><img src="https://drive.google.com/uc?export=download&amp;id=1U6yyx4ino8U4KzgC_AMLZzS-zZD8wF76" width="300" height="225" /></p>
+<p class="p1">Spider Detection Failure</p>
+<p class="p1"><img src="https://drive.google.com/uc?export=download&amp;id=1gfTZfndYL8ub7SB4hgMatKREmmtXQamd" width="300" height="225" /><img src="https://drive.google.com/uc?export=download&amp;id=1Io6eVo8hFKlQFUZfIxTeJLkmAzhEiahC" width="300" height="225" /></p>
+<p class="p1">Explanation: Just like the failure example for the "Palm" gesture. In this case the fingers in the "Spider" gesture are spread too far apart and the system identifies the gesture as a "Thumbs Up" instead. A way to eliminate this would be to increase the detection threshold for the "Thumbs Up" gesture but it is already too high (0.75 at time of writing) to increase further without negative effect and loss of accuracy on the system.&nbsp;</p>
+<p class="p1">Wave Detection Success</p>
+<p class="p1"><img src="https://drive.google.com/uc?export=download&amp;id=1haAzBzoq4JFMqDnUtOzXQ8ynYBe2ijg8" width="500" height="375" />\</p>
+<p class="p1">Wave Detection Failure</p>
+<p class="p1"><img src="https://drive.google.com/uc?export=download&amp;id=18mKIfl4kHdGzjymuE0S2Doy3T6uHaONC" width="500" height="375" /></p>
+<p class="p1">Explanation: In this we get several different false positives because the "Wave" gesture is way too fast. The system struggles to keep up with the rapid changes between frames and you can also see that the skin color segmentation begins to fall apart.&nbsp;</p>
+<p class="p1">&nbsp;</p>
+<p class="p1"><strong>Quantitative Results</strong></p>
+<p class="p1">True Class (Columns)</p>
+<p class="p1">Predicted Class (Rows)</p>
+<p class="p1">N/A Represents "No Gesture"</p>
+<p class="p1"><img src="https://drive.google.com/uc?export=download&amp;id=1Ce1WEESQAOPUfXt2k3pYL9fKlKQz7vuv" width="600" height="176" /></p>
+<p class="p1"><strong>Palm</strong></p>
+<p>19/20 recall = 95% recall</p>
+<p class="p1">19/21 precision = 90.476% precision</p>
+<p class="p1">0.9268 F1-Score</p>
+<p class="p1"><strong>Thumb Up</strong></p>
+<p class="p1">18/20 = 90% recall</p>
+<p class="p1">18/20 = 90% precision</p>
+<p class="p1">0.9 F1-Score</p>
+<p class="p1"><strong>Spider</strong></p>
+<p class="p1">17/20 recall = 85% recall</p>
+<p class="p1">17/18 precision 94.444% precision</p>
+<p class="p1">0.8947 F1-Score</p>
+<p class="p1"><strong>Wave</strong></p>
+<p class="p1">16/20 recall = 80% recall</p>
+<p class="p1">16/16 precision = 100% precision</p>
+<p class="p1">0.8888 F1-Score</p>
+<p class="p1"><strong>No Gesture</strong></p>
+<p class="p1">20/20 recall = 100% recall</p>
+<p class="p1">20/25 precision = 80% precision</p>
+<p class="p1">0.8888 F1-Score</p>
+<p class="p1"><strong>Overall Accuracy = 90%</strong></p>
+<p class="p1">&nbsp;</p>
+<p class="p1">&nbsp;</p>
+<p class="p1">&nbsp;</p>
+<p class="p1">&nbsp;</p>
+<p>&nbsp;</p>
